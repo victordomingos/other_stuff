@@ -7,14 +7,17 @@ A tkinter widget that features autocompletion.
 
 Created by Mitja Martini on 2008-11-29.
 Converted to Python3 by Ian weisser on 2014-04-06.
+Edited by Victor Domingos on 2016-04-25.
 """
+
 import sys
 import os
 import tkinter
 
-__version__ = "1.0"
+__version__ = "1.0.1"
 
 tkinter_umlauts=['odiaeresis', 'adiaeresis', 'udiaeresis', 'Odiaeresis', 'Adiaeresis', 'Udiaeresis', 'ssharp']
+
 
 class AutocompleteEntry(tkinter.Entry):
     """
@@ -41,8 +44,9 @@ class AutocompleteEntry(tkinter.Entry):
         # collect hits
         _hits = []
         for element in self._completion_list:
-            if element.startswith(self.get().lower()):
+            if element.lower().startswith(self.get().lower()):
                 _hits.append(element)
+
         # if we have a new hit list, keep this in mind
         if _hits != self._hits:
             self._hit_index = 0
@@ -52,20 +56,19 @@ class AutocompleteEntry(tkinter.Entry):
             self._hit_index = (self._hit_index + delta) % len(self._hits)
         # now finally perform the auto completion
         if self._hits:
-            self.delete(0,tkinter.END)
+            self.delete(0, tkinter.END)
             self.insert(0,self._hits[self._hit_index])
             self.select_range(self.position,tkinter.END)
                         
     def handle_keyrelease(self, event):
         """event handler for the keyrelease event on this widget"""
         if event.keysym == "BackSpace":
-            self.delete(self.index(tkinter.INSERT), tkinter.END) 
-            self.position = self.index(tkinter.END)
-        if event.keysym == "Left":
             if self.position < self.index(tkinter.END): # delete the selection
                 self.delete(self.position, tkinter.END)
             else:
-                self.position = self.position-1 # delete one character
+                self.position = self.index(tkinter.END)
+        if event.keysym == "Left":
+            if self.position < self.index(tkinter.END): # delete the selection
                 self.delete(self.position, tkinter.END)
         if event.keysym == "Right":
             self.position = self.index(tkinter.END) # go to end (no selection)
@@ -74,8 +77,9 @@ class AutocompleteEntry(tkinter.Entry):
         if event.keysym == "Up":
             self.autocomplete(-1) # cycle to previous hit
         # perform normal autocomplete if event is a single key or an umlaut
-        if len(event.keysym) == 1 or event.keysym in tkinter_umlauts:
+        if len(event.keysym) == 1:
             self.autocomplete()
+            
 
 def test(test_list):
     """Run a mini application to test the AutocompleteEntry Widget."""
@@ -85,6 +89,7 @@ def test(test_list):
     entry.pack()
     entry.focus_set()
     root.mainloop()
+    
 
 if __name__ == '__main__':
     test_list = (u'test', u'type', u'true', u'tree', u'tölz')
