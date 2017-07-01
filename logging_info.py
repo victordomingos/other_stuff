@@ -20,7 +20,7 @@ names for your organization or work team. You can define it in another module
 if it fits your purpose better. Just comment the following line and don't forget
 to adjust the import clauses accordingly, as usual.
 """
-#OUR_LOCATIONS = {'0.0.0.0': 'ExampleLocation',}
+OUR_LOCATIONS = {'0.0.0.0': 'ExampleLocation',}
 
 
 class basicLogInfo():
