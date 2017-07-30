@@ -6,7 +6,7 @@ import json
 
 
 # API provider: http://openweathermap.org/
-APIKEY = '746310c71b33370d5655e5724893b037'
+APIKEY = 'APIKEY' # replace with you API key
 LOCATION = 'Braga,pt'
 API_URL = 'http://api.openweathermap.org/data/2.5/forecast'
 
