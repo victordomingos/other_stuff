@@ -21,7 +21,7 @@ import console
 
 __app_name__ = "The NPK Weather App"
 __author__ = "Victor Domingos"
-__copyright__ = "Copyright 2017 Victor Domingos"
+__copyright__ = "© 2017 Victor Domingos"
 __license__ = "Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)"
 __version__ = "0.9"
 __email__ = "info@victordomingos.com"
@@ -42,7 +42,7 @@ TABLE_FONTSIZE = 11
 DETAILED = False
 
 # Set accordingly with Pythonista app current settings
-DARK_MODE = False
+DARK_MODE = True
 # ----------------------------------------------------
 
 
@@ -50,7 +50,7 @@ def dayNameFromWeekday(weekday):
     days = ["Segunda-feira", "Terça-feira", "Quarta-feira",
             "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
     return days[weekday] if -1 < weekday < len(days) else None
-
+    
 
 def get_weather_data():
     try:            
@@ -71,16 +71,21 @@ def get_weather_data():
 def mostra_previsao():
     previsoes = get_weather_data()['list']
 
+    agora = arrow.now()
+    
     data_anterior = ''
+    show_more_info = True
     for previsao in previsoes:             
         icone = ''       
         data = previsao['dt_txt'].split()[0]
         
-        adate = arrow.get(previsao['dt'])
-        ahora = adate.to('local').format('HH')+'h'
+        adata = arrow.get(previsao['dt'])
+        ahora = adata.to('local').format('HH')+'h'
         
         if not DETAILED and data_anterior != '':
-            if ahora in ('01h','04h','07h','22h'):
+            if ahora in ('04h','07h','22h','01h'):
+                if ahora is '01h':
+                    data_anterior = data
                 continue
         
         temperatura_int = int(previsao['main']['temp'])
@@ -94,18 +99,27 @@ def mostra_previsao():
         if 'rain' in previsao.keys():
             if '3h' in previsao['rain'].keys():
                 chuva = str(previsao['rain']['3h'])
-                icone = '🌧'
                 fchuva = float(chuva)
+                if DETAILED:
+                    chuva = '({}mm/h)'.format(str(round(fchuva/3,1)))
+                else:
+                    chuva = ''
+                icone = '🌧'
+                
                 if fchuva < .75:
-                    chuva = '❔'
-                elif .75 <= fchuva < 1.5:
-                    chuva = '💧'
-                elif 1.5 <= fchuva < 1.5:
-                    chuva = '💧💧'
-                elif 1.5 <= fchuva < 3:
-                    chuva = '💧💧💧'
-                elif 1.5 <= fchuva < 3:
-                    chuva = '💦💦☔️💦💦'            
+                    if tempo == 'Chuva Fraca':
+                        tempo = 'Possibilidade de Chuva Fraca'
+                    #chuva += ''
+                    icone = '☁️'
+                elif .75 <= fchuva < 3:
+                    chuva += '💧'
+                elif 3 <= fchuva < 12:
+                    chuva += '💧💧'
+                elif 12 <= fchuva < 48:
+                    chuva += '💧💧💧'
+                elif 48 <= fchuva:
+                    chuva += '💦💦☔️💦💦'
+
             else:
                 chuva = ''
         else:
@@ -114,7 +128,10 @@ def mostra_previsao():
         
         console.set_font("Menlo-Bold", TABLE_FONTSIZE)
         if data_anterior == '':
-            print('\nHoje ('+data_curta+')')
+            if agora.date().day == adata.date().day:
+                print('\nHoje ('+data_curta+')')
+            else:
+                print('\nAmanhã ('+data_curta+')')
         elif data == data_anterior:
             pass
         else:
@@ -122,20 +139,28 @@ def mostra_previsao():
             print('\n'+dia_da_semana+' ('+data_curta+')')
     
         console.set_font("Menlo-Regular", TABLE_FONTSIZE)
+        
         if tempo == 'Céu Claro':
             tempo = 'Céu Limpo'
-            icone = '☀️'
+            if ahora in ['22h', '01h', '04h']:
+                icone = '🌙'
+            else:
+                icone = '☀️'
         elif tempo == 'Nuvens Quebrados':
             tempo = 'Céu Muito Nublado'
             icone = '☁️'
-    
-        if ('Nuvens' in tempo):
+        elif tempo in ('Algumas Nuvens', 'Nuvens Dispersas'):
+            tempo = 'Céu Pouco Nublado'
+            icone = '🌤'
+        elif ('Nublado' in tempo):
             icone = '☁️'
         if 'Chuva' in tempo:
             tempo = tempo + ' ' + chuva
         
         print('  ', ahora, temperatura, icone, tempo)
+        
         data_anterior = data
+        
         
     
 def config_consola():
