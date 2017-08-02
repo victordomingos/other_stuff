@@ -5,8 +5,8 @@ the web API provided by openweathermap.org and requires 'arrow' (which you can
 install with pip using StaSh).
 
 Developed in Python 3.5 for your enjoyment by:
-    Victor Domingos
-    http://victordomingos.com
+        Victor Domingos
+        http://victordomingos.com
 
 © 2017 Victor Domingos
 Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
@@ -49,7 +49,7 @@ DARK_MODE = False
 def dayNameFromWeekday(weekday):
     days = ["Segunda-feira", "Terça-feira", "Quarta-feira",
             "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
-    return days[weekday] if 0 < weekday < len(days) else None
+    return days[weekday] if -1 < weekday < len(days) else None
 
 
 def get_weather_data():
@@ -72,12 +72,15 @@ def mostra_previsao():
     previsoes = get_weather_data()['list']
 
     data_anterior = ''
-    for previsao in previsoes:                
-        icone = ''
-        data, hora = previsao['dt_txt'].replace(':00:00', 'h').split()
+    for previsao in previsoes:             
+        icone = ''       
+        data = previsao['dt_txt'].split()[0]
         
-        if not DETAILED:
-            if hora in ('00h','03h','06h','21h'):
+        adate = arrow.get(previsao['dt'])
+        ahora = adate.to('local').format('HH')+'h'
+        
+        if not DETAILED and data_anterior != '':
+            if ahora in ('01h','04h','07h','22h'):
                 continue
         
         temperatura_int = int(previsao['main']['temp'])
@@ -131,7 +134,7 @@ def mostra_previsao():
         if 'Chuva' in tempo:
             tempo = tempo + ' ' + chuva
         
-        print('  ', hora, temperatura, icone, tempo)
+        print('  ', ahora, temperatura, icone, tempo)
         data_anterior = data
         
     
