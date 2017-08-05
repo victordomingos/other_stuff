@@ -17,6 +17,7 @@ import sys
 import json
 import arrow
 import console
+import datetime
 
 from pprint import pprint
 
@@ -41,6 +42,8 @@ LOCATION = 'Braga,pt'
 HEADER_FONTSIZE = 16
 TITLE_FONTSIZE = 12
 TABLE_FONTSIZE = 10.5
+TODAY_FONTSIZE = 38
+TODAY_FONTSIZE2 = 13
 
 # Set to True to see more data (forecast for each 3h)
 DETAILED = False
@@ -84,6 +87,7 @@ def obter_humidade(json):
 
         
 def formatar_tempo(tempo,icone,chuva,ahora):
+    tempo = tempo.replace('Garoa Fraca', 'Possib. Chuviscos Fracos')
     if tempo == 'Céu Claro':
         tempo = 'Céu Limpo'
         if ahora in ['22h', '01h', '04h']:
@@ -131,6 +135,8 @@ def get_weather_data(kind='forecast'):
 def mostra_previsao():
     previsoes = get_weather_data(kind='forecast')['list']
     agora = arrow.now().time().hour
+    aagora = arrow.now()
+    
     data_anterior = ''
     
     for previsao in previsoes:             
@@ -141,24 +147,19 @@ def mostra_previsao():
         ahora = adata.to('local').format('HH')+'h'
          
         hoje = arrow.now().date().day
-        amanha = hoje + 1
         adata_dia = adata.date().day
         adata_hora = adata.time().hour
-        if adata_dia == amanha:
-            adata_hora += 24
         
-        if (hoje == adata_dia) or ((amanha == adata_dia) and agora <= adata_hora):
+        
+        if (adata-aagora <= datetime.timedelta(hours=+24)):
             show_more_info = True
-            #print('show_more_info true')
         else:
             show_more_info = False
-            #print('show_more_info false')    
         
         if (not DETAILED) and (not show_more_info):
             if ahora in ('04h','07h','22h','01h'):
                 if ahora is '01h':
                     data_anterior = data
-                #print('continue')
                 continue
         
         temperatura_int = int(previsao['main']['temp'])
@@ -180,30 +181,48 @@ def mostra_previsao():
         nuvens_str = obter_nuvens(previsao)
         humidade = obter_humidade(previsao)
         
-        line_size = 45
+        line_size = 48
         str_dia = ''
         spaces = ''
         console.set_font("Menlo-Bold", TITLE_FONTSIZE)
+        if DARK_MODE:
+            console.set_color(0.5, 0.8, 1)
+        else:
+            console.set_color(0.2, 0.5, 1)
+        
         if data_anterior == '':
             if hoje == adata_dia:
-                str_dia = 'Hoje (' + data_curta + ')'
+                str_dia = '__Hoje ' + data_curta
                 spaces = '_'*(line_size-len(str_dia))
                 str_dia = str_dia + spaces
                 print('\n'+str_dia)
             else:
-                print('\nAmanhã ('+data_curta+')')
+                str_dia = '__Amanhã (' + data_curta + ')'
+                spaces = '_'*(line_size-len(str_dia))
+                str_dia = str_dia + spaces
+                print('\n'+str_dia)
         elif data == data_anterior:
             pass
         else:
             dia_da_semana = dayNameFromWeekday(arr_data.weekday())
-            print('\n'+dia_da_semana+' ('+data_curta+')')
-        
+            str_dia = '__' + dia_da_semana + ' ' + data_curta
+            spaces = '_'*(line_size-len(str_dia))
+            str_dia = str_dia + spaces
+            print('\n'+str_dia)
     
+        if DARK_MODE:
+            console.set_color(1, 1, 1)
+        else:
+            console.set_color(0,0,0)
+        
         console.set_font("Menlo-Regular", TABLE_FONTSIZE)
         tempo, icone = formatar_tempo(tempo,icone,chuva,ahora)
         
         print(' ', ahora, temperatura, icone, tempo, nuvens_str)
         data_anterior = data
+    
+    
+    
         
         
 def mostra_estado_atual():
@@ -238,40 +257,34 @@ def mostra_estado_atual():
     
     direcao, velocidade = converter_vento(vento_dir, vento_veloc)
     
-    str_humidade = ' Humidade: ' + humidade
-    str_pressao = ' Pressão: ' + pressao
-    str_vento = ' Vento: ' + direcao + ' ' + str(velocidade)+'km/h'
+    str_humidade = 12*' ' + 'Humidade: ' + humidade
+    str_pressao = 12*' ' + 'Pressão: ' + pressao
+    str_vento = '\n' + 13*' ' + 'Vento: ' + direcao + ' ' + str(velocidade)+'km/h'
     
-    str_nascer = 'Nascer do sol: ' + ahora_nascer
-    str_por = 'Pôr do sol: ' + ahora_por
+    str_nascer = 'Amanhecer: ' + ahora_nascer + '         '
+    str_por = 'Anoitecer: ' + ahora_por + '         '
     
     
-    line_size = 52
+    line_size = 56
     line1_spaces = ' '*(line_size-len(str_humidade)-len(str_nascer))
     line2_spaces = ' '*(line_size-len(str_pressao)-len(str_por))
     
-    console.set_font("Menlo-Bold", TITLE_FONTSIZE)
-    print('\nAgora mesmo:', icone, temperatura)
-    console.set_font("Menlo-Regular", TABLE_FONTSIZE)
-    print(' ', str_tempo, nuvens_str, chuva)
-    print('  Vento:', direcao, str(velocidade)+'km/h')
+    console.set_font("Menlo-bold", TODAY_FONTSIZE)
+    print(4*' ', icone, temperatura)
+    console.set_font("Menlo-Regular", TODAY_FONTSIZE2)
+    
+    line_size2 = 44
+    str_line0 = '{} {} {}'.format(str_tempo,nuvens_str,chuva)
+    line0_spaces = ' '*int((line_size2-len(str_line0))/2)
+    print(line0_spaces,str_line0)
+    
+    console.set_font("Menlo-Regular", TABLE_FONTSIZE-1)
+    print(str_vento)
     
     str1 = ' {}{}{}'.format(str_humidade,line1_spaces, str_nascer)
     str2 = ' {}{}{}'.format(str_pressao,line2_spaces, str_por)
-    print(str1)
-    print(str2)
+    print(str1+'\n'+str2+'\n')
     
-    
-    #print('  Humidade:', humidade)
-    
-    
-    #print('  Pressão:', pressao)
-    
-    
-    #print('  Nascer do sol:', ahora_nascer)
-    #print('  Pôr do sol:', ahora_por)
-    
-
 
 
 def formatar_chuva(tempo, que_chuva):
@@ -296,8 +309,6 @@ def formatar_chuva(tempo, que_chuva):
     return (tempo, chuva, icone)
 
 
-
-
 def config_consola():
     '''
     Sets console font size and color for Pythonista on iOS
@@ -311,14 +322,14 @@ def config_consola():
     else:
         console.set_color(0.2, 0.5, 1)
         
-    print("{0} ({1})".format(__app_name__, LOCATION))
+    print("{} ({})".format(__app_name__, LOCATION))
     console.set_font("Menlo-Regular", 6.7)
     
     if DARK_MODE:
         console.set_color(0.7, 0.7, 0.7)
     else:
         console.set_color(0.5, 0.5, 0.5)
-    print('{}, {}'.format(__copyright__, __license__))
+    print('{}, {}\n\n'.format(__copyright__, __license__))
     
     console.set_font("Menlo-Regular", TABLE_FONTSIZE)
     
